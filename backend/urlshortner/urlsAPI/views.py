@@ -1,6 +1,5 @@
-from django.shortcuts import render
+from django.shortcuts import redirect
 from .models import urls
-from rest_framework import generics
 from .serializers import URLdeSerializer, URLSerializer
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -10,10 +9,13 @@ import string
 # Create your views here.
 
 
-class find(generics.RetrieveAPIView):
-    queryset = urls.objects.all()
-    serializer_class = URLSerializer
-    lookup_field = 'shortURL'
+@api_view(['GET'])
+def find(request, pk):
+    url_obj = urls.objects.get(shortURL=pk)
+    url = url_obj.mainURL
+    if not url.startswith(('http://', 'https://')):
+        url = "http://" + url
+    return redirect(url)
 
 
 @api_view(['POST'])
@@ -22,7 +24,7 @@ def create(request):
     exist = True
     while exist:
         rndmstr = random_string()
-        exist = urls.objects.filter(shortURL=rndmstr)
+        exist = urls.objects.all().filter(shortURL=rndmstr)
     both_urls = {"shortURL": rndmstr, "mainURL": url}
     urlobject = URLdeSerializer(data=both_urls)
     if urlobject.is_valid():
